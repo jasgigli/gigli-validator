@@ -1,329 +1,267 @@
-<div align="center">
-  <img src="assets/giglijs.png" alt="Gigli.js Logo" width="180" />
-  <h1>Gigli.js</h1>
-  <p><b>Metamorphic, type-safe validation engine for TypeScript & JavaScript</b></p>
-  <p>
-    <a href="https://www.npmjs.com/package/gigli.js"><img src="https://img.shields.io/npm/v/gigli.js?style=flat-square" alt="NPM Version"></a>
-    <a href="https://img.shields.io/npm/dm/gigli.js?style=flat-square"><img src="https://img.shields.io/npm/dm/gigli.js?style=flat-square" alt="NPM Downloads"></a>
-    <a href="https://bundlephobia.com/result?p=gigli.js"><img src="https://img.shields.io/bundlephobia/minzip/gigli.js?style=flat-square" alt="Bundle Size"></a>
-    <a href="https://github.com/jasgigli/gigli.js/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jasgigli/gigli.js/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
-    <!-- <a href="https://codecov.io/gh/jasgigli/gigli.js"><img src="https://codecov.io/gh/jasgigli/gigli.js/branch/main/graph/badge.svg?style=flat-square" alt="Code Coverage"></a> -->
-    <a href="https://github.com/jasgigli/gigli.js/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/gigli.js?style=flat-square" alt="License"></a>
-    <a href="https://www.npmjs.com/package/gigli.js"><img src="https://img.shields.io/npm/types/gigli.js?style=flat-square" alt="Types"></a>
-    <a href="https://github.com/jasgigli/gigli.js/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome"></a>
-  </p>
-  <p>
-    <b>Unified runtime, builder, decorator, and string rule support. Generate OpenAPI/JSON Schema. Use in Node.js, React, Express, NestJS, and more.</b>
-  </p>
-</div>
+# Gigli
+
+> High-Performance Isomorphic Validation Engine for JavaScript & TypeScript (MERN Stack Ready)
 
 ---
 
-# 🚀 Why Gigli.js?
+## Overview
 
-Gigli.js is not just another validator. It's a <b>metamorphic engine</b> that adapts to your coding style—builder, decorator, or string rules—without sacrificing type safety, power, or extensibility.
+Gigli is an isomorphic schema validation engine built for modern JavaScript and TypeScript environments. Designed for full-stack applications (including MERN—MongoDB, Express, React, Node.js), Gigli provides a unified validation API that runs seamlessly across browsers, Node.js servers, edge workers, and client frameworks.
 
-- 🧩 <b>Unified API</b>: Mix & match builder, decorator, and string rules
-- 🦾 <b>Type Inference</b>: Full TypeScript support, everywhere
-- 🛠️ <b>Extensible</b>: Custom rules, transformers, and definitions
-- 🔍 <b>Detailed Error Tracing</b>: See exactly why validation failed
-- 🏗️ <b>Schema Generation</b>: OpenAPI & JSON Schema out of the box
-- ⚡ <b>Zero dependencies</b>, works in Node.js, browsers, and modern runtimes
+Gigli combines type safety, zero dependencies, anti-XSS security sanitization, prototype pollution protection, NoSQL injection defense, declarative string rules, and schema code generation (OpenAPI and JSON Schema).
 
 ---
 
-# 📦 Installation
+## Architectural Comparison Matrix
+
+| Feature | Gigli | Zod | Yup | Joi |
+| :--- | :--- | :--- | :--- | :--- |
+| **Isomorphic (Frontend + Backend)** | Full (MERN Ready) | Partial | Partial | Node.js Heavy |
+| **TypeScript Type Inference** | Native (`Infer<T>`) | Native (`z.infer<T>`) | Partial (`yup.InferType`) | External types |
+| **Form Data Coercion Helper** | Built-in (`v.validateForm`) | Manual transforms | Manual transforms | Manual |
+| **Express Middleware Helper** | Built-in (`v.middleware`) | Community package | Community package | Third-party |
+| **Security (Anti-XSS & NoSQL)** | Built-in (`.xss()`, `.noSqlGuard()`) | None | None | None |
+| **Prototype Pollution Guard** | Automatic | Partial | None | None |
+| **Declarative String Rules** | Supported (`v.from()`) | No | No | Limited |
+| **OpenAPI / JSON Schema** | Built-in | Plugin required | Plugin required | Plugin required |
+
+---
+
+## Key Features
+
+1. **Isomorphic Architecture**: Use identical schemas across React components, HTML forms, Express routes, and MongoDB operations.
+2. **First-Class Security**: Protect applications against XSS attacks, Prototype Pollution, and NoSQL query injection payloads.
+3. **Form Data Integration**: Automatically parse and coerce FormData strings into typed primitives (numbers, booleans, dates).
+4. **Declarative String Rules**: Define validation logic using concise rule strings (`v.from("string|email|min:5")`).
+5. **Class & Decorator Support**: Annotate TypeScript class models with `@ValidatedModel`, `@Rule`, and `@Refine`.
+6. **Zero Dependencies**: Lightweight runtime footprint with zero third-party dependencies.
+
+---
+
+## Installation
 
 ```bash
-npm install gigli.js
+npm install gigli
+```
+
+Or via alternative package managers:
+
+```bash
+yarn add gigli
+pnpm add gigli
+bun add gigli
 ```
 
 ---
 
-# 🏁 Quick Start
+## Quick Start
+
+### Basic Schema Definition
 
 ```typescript
-import { v } from 'gigli.js';
+import { v, Infer } from 'gigli';
 
 const UserSchema = v.object({
-  username: v.string().min(3),
-  email: v.string().email(),
+  username: v.string().min(3).max(20).alphanumeric(),
+  email: v.string().email().toLowerCase().trim(),
+  age: v.number().int().min(18),
+  role: v.enum(['admin', 'user', 'guest']),
+  active: v.boolean().default(true),
 });
 
-const result = UserSchema.safeParse({ username: 'bob', email: 'bob@email.com' });
-console.log(result.success); // true
-```
+// TypeScript type inference
+type User = Infer<typeof UserSchema>;
 
----
-
-# 🌱 Progressive Examples
-
-## 1️⃣ Basic Validation
-
-```typescript
-import { v } from 'gigli.js';
-
-const UserSchema = v.object({
-  username: v.string().min(3),
-  email: v.string().email(),
+// Validation with safeParse
+const result = UserSchema.safeParse({
+  username: 'john_doe',
+  email: '  JOHN@EXAMPLE.COM ',
+  age: 25,
+  role: 'admin',
 });
 
-UserSchema.parse({ username: 'ab', email: 'bad' }); // Throws with detailed error
-```
-
-## 2️⃣ Type Inference
-
-```typescript
-type User = v.infer<typeof UserSchema>;
-// User: { username: string; email: string }
-```
-
-## 3️⃣ Error Handling & Flattening
-
-```typescript
-try {
-  UserSchema.parse({ username: 'ab', email: 'bad' });
-} catch (err) {
-  console.log(err.flatten());
-  /*
-  {
-    input: { username: 'ab', email: 'bad' },
-    errors: [
-      { path: ['username'], message: 'String must be at least 3 characters' },
-      { path: ['email'], message: 'Invalid email address' }
-    ]
-  }
-  */
+if (result.success) {
+  console.log(result.data.email); // "john@example.com"
+} else {
+  console.error(result.error.flatten());
 }
 ```
 
-## 4️⃣ Advanced Builder Features
+---
+
+## Isomorphic MERN Stack Integration Guide
+
+### 1. Express / Node.js Backend Middleware
+
+Gigli provides request validation middleware that validates `req.body`, `req.query`, and `req.params`, returning HTTP 400 Bad Request if validation fails.
 
 ```typescript
-const PostSchema = v.object({
+import express from 'express';
+import { v } from 'gigli';
+
+const app = express();
+app.use(express.json());
+
+const CreateUserSchema = v.object({
+  username: v.string().min(3),
+  email: v.string().email(),
+  password: v.string().min(8),
+});
+
+app.post('/api/users', v.middleware({ body: CreateUserSchema }), (req, res) => {
+  // req.body is fully validated and typed
+  res.status(201).json({ message: 'User created successfully', user: req.body });
+});
+```
+
+### 2. React / Frontend Form Validation
+
+Use `v.validateForm` to validate HTML forms or React state payloads, automatically coercing string inputs to typed numbers, booleans, and dates.
+
+```typescript
+import React, { useState } from 'react';
+import { v } from 'gigli';
+
+const SignupSchema = v.object({
+  username: v.string().min(3, 'Username must be at least 3 characters'),
+  email: v.string().email('Invalid email address'),
+  age: v.number().min(18, 'Must be at least 18 years old'),
+});
+
+export function SignupForm() {
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const result = v.validateForm(SignupSchema, formData);
+
+    if (!result.success) {
+      setErrors(result.errors.fieldErrors);
+    } else {
+      setErrors({});
+      console.log('Submitted Payload:', result.data);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="username" placeholder="Username" />
+      {errors.username && <p>{errors.username.join(', ')}</p>}
+
+      <input name="email" placeholder="Email" />
+      {errors.email && <p>{errors.email.join(', ')}</p>}
+
+      <input name="age" type="number" placeholder="Age" />
+      {errors.age && <p>{errors.age.join(', ')}</p>}
+
+      <button type="submit">Register</button>
+    </form>
+  );
+}
+```
+
+---
+
+## Security Features
+
+### Anti-XSS Sanitization
+
+```typescript
+// Reject strings containing XSS script vectors
+const CommentSchema = v.string().xss('Potential script injection detected');
+
+// Or automatically sanitize HTML tags into safe entities
+const SafeBodySchema = v.string().sanitize();
+```
+
+### Prototype Pollution & NoSQL Defense
+
+```typescript
+// Automatically strips __proto__, constructor, and prototype injections
+const PayloadSchema = v.object({
+  title: v.string(),
+}).noSqlGuard(); // Blocks MongoDB operator objects (e.g. { $gt: "" })
+```
+
+---
+
+## Declarative String Rule Engine
+
+For dynamic or database-driven rules, Gigli supports string rule syntax:
+
+```typescript
+import { v } from 'gigli';
+
+const emailRule = v.from('string|email|min:5');
+const validated = emailRule.parse('user@domain.com');
+```
+
+---
+
+## Class Decorators
+
+```typescript
+import { ValidatedModel, Rule, Refine } from 'gigli';
+
+@ValidatedModel()
+export class UserModel {
+  @Rule('string|min:3')
+  username!: string;
+
+  @Rule('string|email')
+  email!: string;
+
+  @Refine((user: UserModel) => !user.username.includes('admin'), 'Admin username reserved')
+  validateCustom() {}
+}
+```
+
+---
+
+## OpenAPI & JSON Schema Generation
+
+```typescript
+import { v, generateJsonSchema, generateOpenApiSchema } from 'gigli';
+
+const ProductSchema = v.object({
   id: v.string().uuid(),
-  title: v.string().min(5).max(100),
-  tags: v.array(v.string().min(2)).optional(),
-  author: UserSchema, // Schemas are composable!
-  status: v.string().from('enum:values=draft|published|archived'),
-  meta: v.union([
-    v.object({ type: v.literal('text'), content: v.string() }),
-    v.object({ type: v.literal('image'), url: v.string().url() })
-  ])
-});
-```
-
-## 5️⃣ Nested Objects, Arrays, Optionals, Enums
-
-```typescript
-const BlogSchema = v.object({
-  posts: v.array(PostSchema),
-  owner: v.object({
-    id: v.string().uuid(),
-    name: v.string(),
-    roles: v.array(v.string().from('enum:values=admin|editor|user')),
-  }),
-  settings: v.object({
-    commentsEnabled: v.boolean().optional(),
-    theme: v.string().default('light'),
-  })
-});
-```
-
-## 6️⃣ Decorator API (for OOP & NestJS fans)
-
-```typescript
-import { v, ValidatedModel } from 'gigli.js';
-
-@v.Refine((dto) => dto.password === dto.passwordConfirm, {
-  message: "Passwords don't match",
-  path: ['passwordConfirm'],
-})
-class CreateUserDto extends ValidatedModel {
-  @v.Rule(v.string().email())
-  email: string;
-
-  @v.Rule('string:min=8,max=50')
-  password: string;
-
-  @v.Rule(v.string())
-  passwordConfirm: string;
-}
-
-const userDto = CreateUserDto.from({
-  email: 'foo@bar.com',
-  password: 'secret123',
-  passwordConfirm: 'secret123',
-});
-```
-
-## 7️⃣ Pipeline API (for complex workflows)
-
-```typescript
-const OrderPipeline = v.pipeline()
-  .transform((data) => ({ ...data, orderId: data.id.toLowerCase() }))
-  .validate(v.object({ orderId: v.string().min(1) }))
-  .dispatch('paymentMethod', {
-    'credit_card': v.object({ card: v.string().creditCard() }),
-    'paypal': v.object({ email: v.string().email() }),
-  })
-  .refine((order) => order.total > 0, { message: 'Order total must be positive' })
-  .effect({
-    onSuccess: (data) => console.log('Order Validated', data.orderId),
-    onFailure: (trace) => console.error('Order Failed', trace),
-  });
-
-const result = OrderPipeline.safeParse(orderData);
-```
-
-## 8️⃣ Custom Rules, Transformers, and Definitions
-
-```typescript
-v.registerRule('isEven', (value) => typeof value === 'number' && value % 2 === 0);
-v.registerTransformer('trim', (value) => typeof value === 'string' ? value.trim() : value);
-v.define('slug', 'string:min=3|regex:^[a-z0-9-]+$');
-
-const SlugSchema = v.string().from('slug').transform('trim');
-```
-
----
-
-# 🧑‍💻 CLI Usage
-
-```sh
-npx gigli codegen --schema ./src/schemas.ts --target openapi
-npx gigli codegen --schema ./src/schemas.ts --target jsonschema
-npx gigli analyze --schema ./src/schemas.ts
-npx gigli --help
-```
-
----
-
-# 🏆 Feature Comparison
-
-| Feature                        | Zod | Yup | class-validator | <b>Gigli.js</b> |
-|-------------------------------|:---:|:---:|:--------------:|:--------------:|
-| Type Inference                 | ✅  | ❌  | ✅             | ✅             |
-| Chainable Schema Builder       | ✅  | ✅  | ❌             | ✅             |
-| Decorator API                  | ❌  | ❌  | ✅             | ✅             |
-| Portable String Rules          | ❌  | ❌  | ❌             | ✅             |
-| Unified Runtime (Mix & Match)  | ❌  | ❌  | ❌             | ✅             |
-| Validation Pipelines & Dispatch| ❌  | ❌  | ❌             | ✅             |
-| Detailed Error Tracing         | ❌  | ❌  | ❌             | ✅             |
-| Auto OpenAPI/JSON Schema Gen   | ❌  | ❌  | ❌             | ✅             |
-| Extensible (Rules/Transformers)| ⚠️  | ⚠️  | ⚠️             | ✅             |
-
----
-
-# 🌍 Use It Everywhere
-
-- Node.js, Deno, Bun, Cloudflare Workers
-- React, Vue, Svelte, Solid
-- Express, NestJS, tRPC, REST, GraphQL
-- Works in browsers and modern runtimes
-
----
-
-# 🔗 Documentation & Resources
-
-- 📖 <b>[Full Usage Guide](docs/USAGE.md)</b>
-- 🧩 <b>API Reference</b>: See above and in-code docs
-- 💡 <b>Examples</b>: [examples/](examples/)
-- 📝 <b>[Contributing Guide](CONTRIBUTING.md)</b>
-- 🐞 <b>[Report Issues](https://github.com/jasgigli/gigli.js/issues)</b>
-- 📦 <b>[NPM Package](https://www.npmjs.com/package/gigli.js)</b>
-- ⚖️ <b>[License (MIT)](LICENSE)</b>
-
----
-
-# 🤝 Contributing
-
-We are building the future of data validation, and we'd love your help! Please read our <b>[CONTRIBUTING.md](CONTRIBUTING.md)</b> to get started. Whether it's a bug report, a new feature, or a documentation improvement, all contributions are welcome!
-
----
-
-# 🪪 License
-
-Gigli.js is open-source software licensed under the <b>MIT License</b>.
-
----
-
-# 🏷️ Keywords
-
-validation, validator, typescript, schema, zod, yup, class-validator, openapi, jsonschema, decorators, cli, nodejs, react, express, nestjs, type-safe, builder, portable, runtime, inference, extensible, pipeline, unified, metamorphic
-
-## Usage
-
-### ESM (Node.js with `"type": "module"` or `.mjs` files)
-
-```js
-import { v } from 'gigli.js';
-
-const UserSchema = v.object({
-  username: v.string().min(3),
-  email: v.string().email(),
+  name: v.string(),
+  price: v.number().positive(),
 });
 
-(async () => {
-  const result = await UserSchema.safeParse({ username: 'bob', email: 'bob@email.com' });
-  console.log('safeParse:', result); // { success: true, data: ..., error: null }
-  try {
-    const parsed = await UserSchema.parse({ username: 'bob', email: 'bob@email.com' });
-    console.log('parse:', parsed); // { username: 'bob', email: 'bob@email.com' }
-  } catch (err) {
-    console.error('parse error:', err);
-  }
-})();
+const jsonSchema = generateJsonSchema(ProductSchema);
+const openApiSchema = generateOpenApiSchema(ProductSchema);
 ```
 
 ---
 
-### CommonJS (default Node.js or `.js` files)
+## API Reference
 
-```js
-const { v } = require('gigli.js');
+### Primitives
+- `v.string()`: String schema with `.min()`, `.max()`, `.length()`, `.email()`, `.url()`, `.uuid()`, `.objectId()`, `.alphanumeric()`, `.regex()`, `.xss()`, `.sanitize()`, `.trim()`, `.toLowerCase()`, `.toUpperCase()`.
+- `v.number()`: Number schema with `.min()`, `.max()`, `.int()`, `.positive()`, `.negative()`, `.nonnegative()`, `.multipleOf()`, `.finite()`.
+- `v.boolean()`: Boolean schema.
+- `v.date()`: Date schema supporting Date instances or ISO strings.
+- `v.bigint()`: BigInt schema.
+- `v.literal(value)`: Exact literal value schema.
+- `v.enum(values)`: Tuple of string enum values.
+- `v.nativeEnum(enumObj)`: TypeScript enum schema.
+- `v.objectId()`: MongoDB ObjectId validator.
 
-const UserSchema = v.object({
-  username: v.string().min(3),
-  email: v.string().email(),
-});
-
-(async () => {
-  const result = await UserSchema.safeParse({ username: 'bob', email: 'bob@email.com' });
-  console.log('safeParse:', result); // { success: true, data: ..., error: null }
-  try {
-    const parsed = await UserSchema.parse({ username: 'bob', email: 'bob@email.com' });
-    console.log('parse:', parsed); // { username: 'bob', email: 'bob@email.com' }
-  } catch (err) {
-    console.error('parse error:', err);
-  }
-})();
-```
-
----
-
-### TypeScript
-
-TypeScript types are included automatically. You can use the same import as ESM:
-
-```ts
-import { v } from 'gigli.js';
-// ...rest of your code
-```
+### Data Structures & Combinators
+- `v.object(shape)`: Object schema with `.strict()`, `.strip()`, `.passthrough()`, `.extend()`, `.merge()`, `.pick()`, `.omit()`, `.partial()`, `.noSqlGuard()`.
+- `v.array(elementSchema)`: Array schema with `.min()`, `.max()`, `.length()`, `.nonempty()`, `.unique()`.
+- `v.tuple(schemas)`: Fixed-length tuple schema.
+- `v.record(keySchema, valueSchema)`: Record map schema.
+- `v.union(schemas)`: Union schema.
+- `v.discriminatedUnion(discriminator, options)`: Discriminated union schema.
+- `v.intersection(schemaA, schemaB)`: Intersection schema.
+- `v.lazy(getter)`: Lazy recursive schema.
 
 ---
 
-### API
+## License
 
-- `schema.safeParse(data)` — Returns `{ success, data, error }`. Does not throw.
-- `schema.parse(data)` — Returns parsed data or throws on error.
-
-Both methods are **async** and must be awaited.
-
----
-
-## Connect with the Author
-
-- GitHub: [https://github.com/jasgigli/gigli.js](https://github.com/jasgigli/gigli.js)
-- Twitter: [@jasgiigli](https://x.com/jasgiigli)
-- LinkedIn: [jasgigli](https://www.linkedin.com/in/jasgigli/)
+MIT License. Copyright (c) Junaid Ali Shah Gigli.

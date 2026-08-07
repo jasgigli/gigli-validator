@@ -1,34 +1,47 @@
-// Modular core exports for gigli.js
+// Gigli: Core isomorphic engine exports
 
-// Types
-// export type { ValidationOptions, ValidationResult, ValidationSchema } from '../types/validator/types';
-
-// Parser
-export { parse } from "./parser/ruleParser";
-
-// Registry
-export { define, getDefinition } from "./registry/definitionRegistry";
+export { GigliError, GigliIssue } from './errors';
+export { GigliSchema, SafeParseResult } from './schema';
 export {
-  getAsyncRule,
-  getSyncRule,
-  registerAsyncRule,
-  registerSyncRule,
-} from "./validator/syncValidator";
-export { getTransformer, registerTransformer } from "./validator/transformer";
+  containsXss,
+  isDangerousKey,
+  isMongoInjectionPayload,
+  sanitizeHtml,
+  sanitizeObjectKeys,
+} from './security';
+export {
+  GigliAny,
+  GigliArray,
+  GigliBigInt,
+  GigliBoolean,
+  GigliDate,
+  GigliDiscriminatedUnion,
+  GigliEnum,
+  GigliIntersection,
+  GigliLazy,
+  GigliLiteral,
+  GigliNativeEnum,
+  GigliNever,
+  GigliNull,
+  GigliNumber,
+  GigliObject,
+  GigliRecord,
+  GigliString,
+  GigliTuple,
+  GigliUndefined,
+  GigliUnion,
+  GigliUnknown,
+} from './validators';
 
-// Validator
-export { applyTransformers } from "./validator/transformer";
-export { validateChain } from "./validator/validateChain";
+export { Infer, infer, v, VFactory } from './builder';
+export { middleware, validateForm } from './mern';
 
-// Engine
-export { validateAST } from "./engine/validateAST";
+// Parser & Registry
+export { parse } from './parser/ruleParser';
 
-// Codegen
-export { generateJsonSchema } from "./codegen/jsonSchema";
-export { generateOpenApiSchema } from "./codegen/openApi";
-
-// Analyze
-export { analyzeSchema } from "./analyze/analyzeSchema";
+// Codegen & Schema generators
+export { generateJsonSchema } from './codegen/jsonSchema';
+export { generateOpenApiSchema } from './codegen/openApi';
 
 // Decorators
 export {
@@ -36,34 +49,25 @@ export {
   Refine,
   Rule,
   ValidatedModel,
-} from "./decorators/validatedModel";
+} from './decorators/validatedModel';
 
-// Builder
-export {
-  ArrayBuilder,
-  ObjectBuilder,
-  PrimitiveBuilder,
-  v,
-  VBuilder,
-} from "./builder";
-
-// Top-level validate function for user convenience
-import { v } from "./builder";
-import { validateAST } from "./engine/validateAST";
+import { v } from './builder';
+import { GigliSchema } from './schema';
 
 /**
- * Validate a value against a schema (AST or builder instance).
- * @param schema - The schema (AST or builder)
- * @param value - The value to validate
- * @param context - Optional context
- * @returns Validation result
+ * Top-level validate helper.
  */
-export async function validate(schema: any, value: any, context: any = {}) {
-  const ast = typeof schema.toAST === "function" ? schema.toAST() : schema;
-  return validateAST(ast, value, context);
+export async function validate(schema: any, value: any) {
+  if (schema instanceof GigliSchema) {
+    return schema.safeParseAsync(value);
+  }
+  if (schema && typeof schema.parseAsync === 'function') {
+    return schema.parseAsync(value);
+  }
+  return { valid: true, value };
 }
 
-// Top-level builder exports for easier usage
+// Function shorthand exports
 export const object = v.object.bind(v);
 export const string = v.string.bind(v);
 export const number = v.number.bind(v);

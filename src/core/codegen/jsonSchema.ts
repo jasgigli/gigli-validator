@@ -1,63 +1,76 @@
-// import type { ASTNode } from '../../../types/ast/types';
-import type { ArrayNode, ObjectNode, PrimitiveNode } from "../ast/nodes";
+import { GigliSchema } from '../schema';
+import {
+  GigliArray,
+  GigliBoolean,
+  GigliDate,
+  GigliNumber,
+  GigliObject,
+  GigliString,
+} from '../validators';
 
-function isOptionalField(node: any): boolean {
-  return (
-    (node.type === "primitive" ||
-      node.type === "object" ||
-      node.type === "array") &&
-    !!(node as PrimitiveNode | ObjectNode | ArrayNode).optional
-  );
-}
+export function generateJsonSchema(nodeOrSchema: any): any {
+  if (!nodeOrSchema) return {};
 
-export function generateJsonSchema(node: any): any {
-  if (node.type === "primitive") {
-    let type: string = node.primitive;
-    if (type === "any") type = "string";
-    return { type };
+  if (nodeOrSchema instanceof GigliString) {
+    return { type: 'string' };
   }
-  if (node.type === "object") {
+  if (nodeOrSchema instanceof GigliNumber) {
+    return { type: 'number' };
+  }
+  if (nodeOrSchema instanceof GigliBoolean) {
+    return { type: 'boolean' };
+  }
+  if (nodeOrSchema instanceof GigliDate) {
+    return { type: 'string', format: 'date-time' };
+  }
+  if (nodeOrSchema instanceof GigliObject) {
     const properties: Record<string, any> = {};
     const required: string[] = [];
-    for (const key in node.fields) {
-      properties[key] = generateJsonSchema(node.fields[key]);
-      if (!isOptionalField(node.fields[key])) required.push(key);
+    for (const key of Object.keys(nodeOrSchema.shape)) {
+      const field = nodeOrSchema.shape[key];
+      properties[key] = generateJsonSchema(field);
+      required.push(key);
     }
     return {
-      type: "object",
+      type: 'object',
       properties,
       required: required.length ? required : undefined,
     };
   }
-  if (node.type === "array") {
+  if (nodeOrSchema instanceof GigliArray) {
     return {
-      type: "array",
+      type: 'array',
+      items: generateJsonSchema(nodeOrSchema.elementSchema),
+    };
+  }
+
+  // AST node fallbacks
+  const node = typeof nodeOrSchema.toAST === 'function' ? nodeOrSchema.toAST() : nodeOrSchema;
+
+  if (node.type === 'primitive') {
+    let type: string = node.primitive;
+    if (type === 'any') type = 'string';
+    return { type };
+  }
+  if (node.type === 'object' && node.fields) {
+    const properties: Record<string, any> = {};
+    const required: string[] = [];
+    for (const key in node.fields) {
+      properties[key] = generateJsonSchema(node.fields[key]);
+      required.push(key);
+    }
+    return {
+      type: 'object',
+      properties,
+      required: required.length ? required : undefined,
+    };
+  }
+  if (node.type === 'array' && node.element) {
+    return {
+      type: 'array',
       items: generateJsonSchema(node.element),
     };
   }
-  if (node.type === "class") {
-    // Treat class like object for JSON Schema
-    const properties: Record<string, any> = {};
-    const required: string[] = [];
-    for (const key in node.fields) {
-      properties[key] = generateJsonSchema(node.fields[key]);
-      if (!isOptionalField(node.fields[key])) required.push(key);
-    }
-    return {
-      type: "object",
-      properties,
-      required: required.length ? required : undefined,
-    };
-  }
-  if (node.type === "pipeline") {
-    // Output the schema for the first validate step, or a generic object
-    const validateStep = node.steps.find((s: any) => s.type === "validate");
-    if (validateStep && validateStep.schema) {
-      return generateJsonSchema(validateStep.schema);
-    }
-    return { type: "object" };
-  }
-  return {};
-}
 
-export { isOptionalField };
+  return { type: 'object' };
+}

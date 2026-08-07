@@ -1,22 +1,24 @@
 {
-  "name": "gigli.js",
-  "version": "2.0.0",
-  "description": "Gigli.js: A modular, type-safe validation engine for TypeScript. Unified runtime, builder, decorator, and string rule support. First official release.",
+  "name": "gigli",
+  "version": "3.0.0",
+  "description": "Gigli: High-performance, type-safe isomorphic JavaScript and TypeScript validation engine for MERN stack, Node.js, and web browsers with built-in security, schema inference, decorator models, string rules, and OpenAPI/JSON Schema generation.",
   "author": "Junaid Ali Shah Gigli",
   "license": "MIT",
-  "homepage": "https://github.com/jasgigli/gigli.js#readme",
+  "homepage": "https://github.com/jasgigli/gigli#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jasgigli/gigli.js.git"
+    "url": "git+https://github.com/jasgigli/gigli.git"
   },
   "bugs": {
-    "url": "https://github.com/jasgigli/gigli.js/issues"
+    "url": "https://github.com/jasgigli/gigli/issues"
   },
   "keywords": [
+    "gigli",
     "validex",
     "validation",
     "validator",
     "typescript",
+    "javascript",
     "zod",
     "yup",
     "joi",
@@ -24,16 +26,13 @@
     "schema",
     "typesafe",
     "inference",
-    "decorators",
-    "nestjs",
-    "trpc",
+    "mern",
     "express",
     "react",
-    "form",
-    "chainable",
-    "declarative",
     "isomorphic",
-    "metamorphic"
+    "sanitization",
+    "xss",
+    "security"
   ],
   "engines": {
     "node": ">=16.0.0"
@@ -75,10 +74,7 @@
     "rimraf": "^5.0.5",
     "ts-jest": "^29.1.5",
     "ts-node": "^10.9.2",
+    "tsup": "^8.5.0",
     "typescript": "^5.4.5"
-  },
-  "dependencies": {
-    "gigli.js": "^1.0.0",
-    "tsup": "^8.5.0"
   }
 }

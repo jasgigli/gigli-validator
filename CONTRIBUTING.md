@@ -12,7 +12,7 @@ Thank you for considering contributing to gigli.js! Your help is greatly appreci
 
 ## Development Setup
 
-- Clone your fork: `git clone https://github.com/your-username/gigli.js.git`
+- Clone your fork: `git clone https://github.com/jasgigli/gigli.git`
 - Install dependencies: `npm install`
 - Build the project: `tsc`
 - Run tests: `npm test`
