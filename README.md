@@ -7,7 +7,6 @@ High-performance, type-safe schema validation and data sanitization engine for T
 ## Table of Contents
 
 - [Overview](#overview)
-- [Architecture & Execution Pipeline](#architecture--execution-pipeline)
 - [Why Gigli?](#why-gigli)
 - [Feature Comparison](#feature-comparison)
 - [Installation](#installation)
@@ -39,81 +38,6 @@ High-performance, type-safe schema validation and data sanitization engine for T
 Runtime data validation ensures that data entering an application matches expected formats and constraints before processing. Without strict validation, unvalidated payloads can lead to unhandled runtime exceptions, data corruption, database injection attacks, and cross-site scripting (XSS) vulnerabilities.
 
 **Gigli** provides a unified runtime validation engine designed for TypeScript and JavaScript across browser, Node.js, and serverless edge environments. It combines static type inference, chained schema builders, string-based rule declarations, class decorators, and security guards into a single zero-dependency package.
-
----
-
-## Architecture & Execution Pipeline
-
-The following interactive diagrams illustrate how Gigli processes data, enforces security guards, and connects shared schemas across frontend and backend layers.
-
-### 1. Core Processing Pipeline
-
-```mermaid
-graph TD
-    A["Raw Input Payload (JSON / Object / FormData)"] --> B["Gigli Validation Engine"]
-    
-    subgraph "Core Processing Pipeline"
-        B --> C["1. Security Guard Layer"]
-        C --> C1["Anti-XSS Filter (.xss / .sanitize)"]
-        C --> C2["Prototype Pollution Stripper"]
-        C --> C3["NoSQL Injection Guard (.noSqlGuard)"]
-        
-        C1 & C2 & C3 --> D["2. AST Rule & Type Evaluator"]
-        D --> D1["Primitive Rules (min, max, email)"]
-        D --> D2["Complex Composers (object, array, union)"]
-        D --> D3["Data Coercion (strings -> primitives)"]
-    end
-    
-    D1 & D2 & D3 --> E{"Validation Result"}
-    E -- "Success" --> F["Typed & Sanitized Data Payload"]
-    E -- "Failure" --> G["Structured Error Response (fieldErrors)"]
-```
-
-### 2. Unified Schema Integration Flow
-
-```mermaid
-flowchart LR
-    subgraph "Single Source of Truth"
-        S["Shared Gigli Schema (schema.ts)"]
-    end
-    
-    S --> FE["Frontend Application"]
-    S --> BE["Backend Server"]
-    S --> CLI["CLI Tooling"]
-    
-    FE --> FE1["v.validateForm(schema, formData)"]
-    FE --> FE2["React Form Error Display"]
-    
-    BE --> BE1["v.middleware({ body: schema })"]
-    BE --> BE2["Express / Node.js Route Guard"]
-    
-    CLI --> CLI1["npx gigli codegen --target openapi"]
-    CLI --> CLI2["npx gigli codegen --target jsonschema"]
-```
-
-### 3. Security Interception Sequence
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Attacker
-    participant Endpoint as API Endpoint / Express
-    participant Security as Gigli Security Guards
-    participant App as Application Logic
-    
-    Attacker->>Endpoint: POST payload with XSS / NoSQL Injection
-    Endpoint->>Security: Validate with Schema (.noSqlGuard & .xss)
-    
-    rect rgb(240, 240, 240)
-        Note over Security: 1. Detects '$' key -> Blocks NoSQL Injection
-        Note over Security: 2. Strips '__proto__' keys -> Defense against Prototype Pollution
-        Note over Security: 3. Detects script payload -> Triggers Anti-XSS Guard
-    end
-    
-    Security-->>Endpoint: Validation Failed (HTTP 400 + Security Issue Details)
-    Endpoint-->>Attacker: 400 Bad Request
-    Note over App: Application Logic never receives untrusted payload
-```
 
 ---
 
@@ -149,18 +73,18 @@ Gigli addresses these core pain points:
 
 ## Installation
 
-Install Gigli using your package manager (click the copy button on the right):
+Install Gigli using your package manager:
 
 ```bash
-npm install gigli
+npm install gigli.js
 ```
 
 Or via Yarn, pnpm, or Bun:
 
 ```bash
-yarn add gigli
-pnpm add gigli
-bun add gigli
+yarn add gigli.js
+pnpm add gigli.js
+bun add gigli.js
 ```
 
 ---
@@ -172,7 +96,7 @@ bun add gigli
 Import the validator factory `v` to construct schema definitions:
 
 ```typescript
-import { v } from 'gigli';
+import { v } from 'gigli.js';
 
 const UserSchema = v.object({
   username: v.string().min(3).max(20).alphanumeric(),
@@ -188,7 +112,7 @@ const UserSchema = v.object({
 Extract compile-time TypeScript types directly from schemas without duplicating interface definitions:
 
 ```typescript
-import { Infer } from 'gigli';
+import { Infer } from 'gigli.js';
 
 type User = Infer<typeof UserSchema>;
 
@@ -243,7 +167,7 @@ Sharing schemas between server endpoints and client-side forms guarantees that d
 
 ```typescript
 // schemas/auth.ts (Shared schema module)
-import { v } from 'gigli';
+import { v } from 'gigli.js';
 
 export const LoginSchema = v.object({
   email: v.string().email('Please enter a valid email address'),
@@ -281,7 +205,7 @@ const UserQuerySchema = v.object({
 HTML form submits return string key-value pairs for all fields. `v.validateForm` parses `FormData` instances and converts fields into typed primitives.
 
 ```typescript
-import { v } from 'gigli';
+import { v } from 'gigli.js';
 
 const RegistrationSchema = v.object({
   username: v.string().min(3),
@@ -306,7 +230,7 @@ function handleFormSubmit(formElement: HTMLFormElement) {
 For runtime schemas defined dynamically or retrieved from databases, Gigli provides a string rule evaluation syntax:
 
 ```typescript
-import { v } from 'gigli';
+import { v } from 'gigli.js';
 
 // Dynamic schema parsed from rule strings
 const emailRule = v.from('string|email|min:5');
@@ -319,7 +243,7 @@ const isValid = emailRule.safeParse('developer@example.com');
 Applications using class-oriented domain models can annotate properties with Gigli validation decorators:
 
 ```typescript
-import { ValidatedModel, Rule, Refine } from 'gigli';
+import { ValidatedModel, Rule, Refine } from 'gigli.js';
 
 @ValidatedModel()
 export class ProductModel extends ValidatedModel {
@@ -344,7 +268,7 @@ const product = ProductModel.from({ name: 'Keyboard', price: 49.99 });
 Export standard OpenAPI 3.0 documentation and JSON Schemas directly from runtime definitions without maintaining separate YAML or JSON documents:
 
 ```typescript
-import { v, generateOpenApiSchema, generateJsonSchema } from 'gigli';
+import { v, generateOpenApiSchema, generateJsonSchema } from 'gigli.js';
 
 const AccountSchema = v.object({
   id: v.string().uuid(),
@@ -396,7 +320,7 @@ Validate incoming requests in Express routing layers:
 
 ```typescript
 import express from 'express';
-import { v } from 'gigli';
+import { v } from 'gigli.js';
 
 const app = express();
 app.use(express.json());
@@ -416,7 +340,7 @@ app.post('/posts', v.middleware({ body: CreatePostSchema }), (req, res) => {
 Parse raw `FormData` in web applications:
 
 ```typescript
-import { v } from 'gigli';
+import { v } from 'gigli.js';
 
 const result = v.validateForm(schema, formData);
 // Returns { success: true, data: T } or { success: false, errors: { fieldErrors: Record<string, string[]> } }
