@@ -58,13 +58,34 @@ import { GigliSchema } from './schema';
  * Top-level validate helper.
  */
 export async function validate(schema: any, value: any) {
+  let result: any;
   if (schema instanceof GigliSchema) {
-    return schema.safeParseAsync(value);
+    result = await schema.safeParseAsync(value);
+  } else if (schema && typeof schema.safeParseAsync === 'function') {
+    result = await schema.safeParseAsync(value);
+  } else if (schema && typeof schema.parseAsync === 'function') {
+    try {
+      const data = await schema.parseAsync(value);
+      result = { success: true, data };
+    } catch (err: any) {
+      result = { success: false, error: err };
+    }
+  } else {
+    result = { success: true, data: value };
   }
-  if (schema && typeof schema.parseAsync === 'function') {
-    return schema.parseAsync(value);
-  }
-  return { valid: true, value };
+
+  const isValid = result.success !== undefined ? result.success : true;
+  const dataVal = result.data !== undefined ? result.data : result.value;
+  const issuesList = result.error && result.error.issues ? result.error.issues.map((i: any) => i.message) : [];
+
+  return {
+    valid: isValid,
+    value: dataVal,
+    errors: issuesList,
+    success: isValid,
+    data: dataVal,
+    error: result.error,
+  };
 }
 
 // Function shorthand exports

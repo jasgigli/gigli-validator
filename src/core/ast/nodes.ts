@@ -1,4 +1,4 @@
-// AST Node interfaces for gigli.js V4 Unified Runtime
+// AST Node interfaces for Gigli Unified Runtime
 
 export type {
   ASTNode,

@@ -47,9 +47,15 @@ export function sanitizeObjectKeys(obj: any): any {
 }
 
 export function isMongoInjectionPayload(input: unknown): boolean {
-  if (input !== null && typeof input === 'object' && !Array.isArray(input)) {
+  if (input !== null && typeof input === 'object') {
+    if (Array.isArray(input)) {
+      return input.some(isMongoInjectionPayload);
+    }
     const keys = Object.keys(input);
-    return keys.some((k) => k.startsWith('$'));
+    if (keys.some((k) => k.startsWith('$'))) return true;
+    for (const key of keys) {
+      if (isMongoInjectionPayload((input as Record<string, any>)[key])) return true;
+    }
   }
   return false;
 }

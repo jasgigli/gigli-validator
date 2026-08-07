@@ -1,4 +1,4 @@
-// AST Node Types for gigli.js V4 Unified Runtime
+// AST Node Types for Gigli Unified Runtime
 export type PrimitiveType =
   | "string"
   | "number"

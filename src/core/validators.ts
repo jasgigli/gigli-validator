@@ -33,15 +33,22 @@ export class GigliString extends GigliSchema<string> {
       };
     }
 
+    const rawVal = input;
     let currentVal = input;
     const issues: GigliIssue[] = [];
 
+    // Run string transformations (trim, lowerCase, upperCase, sanitize, etc.)
     for (const check of this.checks) {
       if (check.transform) {
         currentVal = check.transform(currentVal);
       }
+    }
+
+    // Evaluate string validation checks on currentVal (or rawVal for xss)
+    for (const check of this.checks) {
       if (check.fn) {
-        const res = check.fn(currentVal);
+        const valToCheck = check.kind === 'xss' ? rawVal : currentVal;
+        const res = check.fn(valToCheck);
         if (res === false) {
           issues.push({
             code: check.kind,
@@ -617,7 +624,7 @@ export class GigliObject<Shape extends ObjectShape> extends GigliSchema<{
 
     // Prototype pollution guard
     for (const key of Object.keys(inputObj)) {
-      if (isDangerousKey(key)) {
+      if (isDangerousKey(key) && this.mode === 'strict') {
         issues.push({
           code: 'security_prototype_pollution',
           path: [...path, key],

@@ -2,8 +2,8 @@ import "reflect-metadata";
 import type { ClassNode } from "../ast/nodes";
 import { validateAST } from "../engine/validateAST";
 
-const RULES_KEY = Symbol("gigli.js:rules");
-const REFINES_KEY = Symbol("gigli.js:refines");
+const RULES_KEY = Symbol("gigli:rules");
+const REFINES_KEY = Symbol("gigli:refines");
 
 export function Rule(rule: any) {
   return function (target: any, propertyKey: string) {

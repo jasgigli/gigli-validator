@@ -1,6 +1,6 @@
 export function printHelp() {
   console.log(
-    `gigli.js CLI\n\nUsage:\n  npx gigli.js codegen --schema <file> --target <openapi|jsonschema>\n  npx gigli.js analyze --schema <file>\n`,
+    `gigli CLI\n\nUsage:\n  npx gigli codegen --schema <file> --target <openapi|jsonschema>\n  npx gigli analyze --schema <file>\n`,
   );
 }
 

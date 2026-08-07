@@ -1,50 +1,161 @@
 # Gigli
 
-> High-Performance Isomorphic Validation Engine for JavaScript & TypeScript (MERN Stack Ready)
+High-performance, type-safe schema validation and data sanitization engine for TypeScript and JavaScript. Zero runtime dependencies.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture & Execution Pipeline](#architecture--execution-pipeline)
+- [Why Gigli?](#why-gigli)
+- [Feature Comparison](#feature-comparison)
+- [Installation](#installation)
+- [Quick Start for Beginners](#quick-start-for-beginners)
+  - [1. Defining a Schema](#1-defining-a-schema)
+  - [2. Inferring TypeScript Types](#2-inferring-typescript-types)
+  - [3. Validating Input Data](#3-validating-input-data)
+- [Core Features & Problem Solved](#core-features--problem-solved)
+  - [Unified Frontend & Backend Validation](#unified-frontend--backend-validation)
+  - [Built-In Security & Sanitization](#built-in-security--sanitization)
+  - [Automatic Form Data Coercion](#automatic-form-data-coercion)
+  - [Declarative String Rules](#declarative-string-rules)
+  - [Class & Decorator Models](#class--decorator-models)
+  - [OpenAPI & JSON Schema Generation](#openapi--json-schema-generation)
+- [API Reference](#api-reference)
+  - [Primitive Validators](#primitive-validators)
+  - [Complex & Structural Validators](#complex--structural-validators)
+  - [Security Methods](#security-methods)
+  - [Express Integration](#express-integration)
+  - [Form Validation](#form-validation)
+  - [CLI Tooling](#cli-tooling)
+- [Testing & Quality Assurance](#testing--quality-assurance)
+- [License](#license)
 
 ---
 
 ## Overview
 
-Gigli is an isomorphic schema validation engine built for modern JavaScript and TypeScript environments. Designed for full-stack applications (including MERN—MongoDB, Express, React, Node.js), Gigli provides a unified validation API that runs seamlessly across browsers, Node.js servers, edge workers, and client frameworks.
+Runtime data validation ensures that data entering an application matches expected formats and constraints before processing. Without strict validation, unvalidated payloads can lead to unhandled runtime exceptions, data corruption, database injection attacks, and cross-site scripting (XSS) vulnerabilities.
 
-Gigli combines type safety, zero dependencies, anti-XSS security sanitization, prototype pollution protection, NoSQL injection defense, declarative string rules, and schema code generation (OpenAPI and JSON Schema).
+**Gigli** provides a unified runtime validation engine designed for TypeScript and JavaScript across browser, Node.js, and serverless edge environments. It combines static type inference, chained schema builders, string-based rule declarations, class decorators, and security guards into a single zero-dependency package.
 
 ---
 
-## Architectural Comparison Matrix
+## Architecture & Execution Pipeline
+
+The following interactive diagrams illustrate how Gigli processes data, enforces security guards, and connects shared schemas across frontend and backend layers.
+
+### 1. Core Processing Pipeline
+
+```mermaid
+graph TD
+    A["Raw Input Payload (JSON / Object / FormData)"] --> B["Gigli Validation Engine"]
+    
+    subgraph "Core Processing Pipeline"
+        B --> C["1. Security Guard Layer"]
+        C --> C1["Anti-XSS Filter (.xss / .sanitize)"]
+        C --> C2["Prototype Pollution Stripper"]
+        C --> C3["NoSQL Injection Guard (.noSqlGuard)"]
+        
+        C1 & C2 & C3 --> D["2. AST Rule & Type Evaluator"]
+        D --> D1["Primitive Rules (min, max, email)"]
+        D --> D2["Complex Composers (object, array, union)"]
+        D --> D3["Data Coercion (strings -> primitives)"]
+    end
+    
+    D1 & D2 & D3 --> E{"Validation Result"}
+    E -- "Success" --> F["Typed & Sanitized Data Payload"]
+    E -- "Failure" --> G["Structured Error Response (fieldErrors)"]
+```
+
+### 2. Unified Schema Integration Flow
+
+```mermaid
+flowchart LR
+    subgraph "Single Source of Truth"
+        S["Shared Gigli Schema (schema.ts)"]
+    end
+    
+    S --> FE["Frontend Application"]
+    S --> BE["Backend Server"]
+    S --> CLI["CLI Tooling"]
+    
+    FE --> FE1["v.validateForm(schema, formData)"]
+    FE --> FE2["React Form Error Display"]
+    
+    BE --> BE1["v.middleware({ body: schema })"]
+    BE --> BE2["Express / Node.js Route Guard"]
+    
+    CLI --> CLI1["npx gigli codegen --target openapi"]
+    CLI --> CLI2["npx gigli codegen --target jsonschema"]
+```
+
+### 3. Security Interception Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Attacker
+    participant Endpoint as API Endpoint / Express
+    participant Security as Gigli Security Guards
+    participant App as Application Logic
+    
+    Attacker->>Endpoint: POST payload with XSS / NoSQL Injection
+    Endpoint->>Security: Validate with Schema (.noSqlGuard & .xss)
+    
+    rect rgb(240, 240, 240)
+        Note over Security: 1. Detects '$' key -> Blocks NoSQL Injection
+        Note over Security: 2. Strips '__proto__' keys -> Defense against Prototype Pollution
+        Note over Security: 3. Detects script payload -> Triggers Anti-XSS Guard
+    end
+    
+    Security-->>Endpoint: Validation Failed (HTTP 400 + Security Issue Details)
+    Endpoint-->>Attacker: 400 Bad Request
+    Note over App: Application Logic never receives untrusted payload
+```
+
+---
+
+## Why Gigli?
+
+Existing schema validation solutions often focus on isolated concerns: type inference (Zod), form validation (Yup), or backend object enforcement (Joi). Developers frequently pull in multiple security middleware packages, custom regex sanitizers, or third-party plugins to handle basic production requirements.
+
+Gigli addresses these core pain points:
+
+1. **Eliminates Code Drift Across Applications**: Define schemas once and share them across client-side forms, API middleware, and database operations.
+2. **Defensive Runtime Security Out-of-the-Box**: Includes built-in guards against Cross-Site Scripting (XSS), Prototype Pollution payloads (`__proto__`, `constructor`), and NoSQL query injection attacks (e.g. MongoDB `$gt` operators).
+3. **Seamless Form Input Coercion**: HTML forms submit string values for every field. Gigli automatically parses and coerces input parameters into typed numbers, booleans, and dates without manual `Number()` or `Boolean()` transformations.
+4. **Multiple Schema Paradigms**: Choose fluent chainable builders (`v.object()`), dynamic database-driven rule strings (`v.from()`), or class decorators (`@ValidatedModel()`) depending on your codebase architecture.
+5. **Zero Runtime Dependencies**: Zero external dependencies ensures small bundle footprints, predictable security auditing, and fast instantiation times.
+
+---
+
+## Feature Comparison
 
 | Feature | Gigli | Zod | Yup | Joi |
 | :--- | :--- | :--- | :--- | :--- |
-| **Isomorphic (Frontend + Backend)** | Full (MERN Ready) | Partial | Partial | Node.js Heavy |
-| **TypeScript Type Inference** | Native (`Infer<T>`) | Native (`z.infer<T>`) | Partial (`yup.InferType`) | External types |
-| **Form Data Coercion Helper** | Built-in (`v.validateForm`) | Manual transforms | Manual transforms | Manual |
-| **Express Middleware Helper** | Built-in (`v.middleware`) | Community package | Community package | Third-party |
-| **Security (Anti-XSS & NoSQL)** | Built-in (`.xss()`, `.noSqlGuard()`) | None | None | None |
-| **Prototype Pollution Guard** | Automatic | Partial | None | None |
-| **Declarative String Rules** | Supported (`v.from()`) | No | No | Limited |
-| **OpenAPI / JSON Schema** | Built-in | Plugin required | Plugin required | Plugin required |
-
----
-
-## Key Features
-
-1. **Isomorphic Architecture**: Use identical schemas across React components, HTML forms, Express routes, and MongoDB operations.
-2. **First-Class Security**: Protect applications against XSS attacks, Prototype Pollution, and NoSQL query injection payloads.
-3. **Form Data Integration**: Automatically parse and coerce FormData strings into typed primitives (numbers, booleans, dates).
-4. **Declarative String Rules**: Define validation logic using concise rule strings (`v.from("string|email|min:5")`).
-5. **Class & Decorator Support**: Annotate TypeScript class models with `@ValidatedModel`, `@Rule`, and `@Refine`.
-6. **Zero Dependencies**: Lightweight runtime footprint with zero third-party dependencies.
+| **Zero Runtime Dependencies** | Yes | Yes | No | No |
+| **Native Static Type Inference** | `Infer<T>` | `z.infer<T>` | `yup.InferType` | External types |
+| **Built-in Anti-XSS Sanitization** | Native (`.xss()`, `.sanitize()`) | No | No | No |
+| **Built-in Prototype Pollution Defense** | Automatic | Partial | No | No |
+| **Built-in NoSQL Injection Guard** | Native (`.noSqlGuard()`) | No | No | No |
+| **Native Form Data Coercion** | Built-in (`v.validateForm`) | Manual transforms | Manual transforms | Manual |
+| **Express Middleware Integration** | Built-in (`v.middleware`) | Community package | Community package | Third-party |
+| **Declarative String Syntax** | Native (`v.from()`) | No | No | Limited |
+| **OpenAPI / JSON Schema Generator** | Built-in (`npx gigli`) | Plugin required | Plugin required | Plugin required |
 
 ---
 
 ## Installation
 
+Install Gigli using your package manager (click the copy button on the right):
+
 ```bash
 npm install gigli
 ```
 
-Or via alternative package managers:
+Or via Yarn, pnpm, or Bun:
 
 ```bash
 yarn add gigli
@@ -54,12 +165,14 @@ bun add gigli
 
 ---
 
-## Quick Start
+## Quick Start for Beginners
 
-### Basic Schema Definition
+### 1. Defining a Schema
+
+Import the validator factory `v` to construct schema definitions:
 
 ```typescript
-import { v, Infer } from 'gigli';
+import { v } from 'gigli';
 
 const UserSchema = v.object({
   username: v.string().min(3).max(20).alphanumeric(),
@@ -68,11 +181,32 @@ const UserSchema = v.object({
   role: v.enum(['admin', 'user', 'guest']),
   active: v.boolean().default(true),
 });
+```
 
-// TypeScript type inference
+### 2. Inferring TypeScript Types
+
+Extract compile-time TypeScript types directly from schemas without duplicating interface definitions:
+
+```typescript
+import { Infer } from 'gigli';
+
 type User = Infer<typeof UserSchema>;
 
-// Validation with safeParse
+// Equivalent inferred type:
+// type User = {
+//   username: string;
+//   email: string;
+//   age: number;
+//   role: 'admin' | 'user' | 'guest';
+//   active: boolean;
+// }
+```
+
+### 3. Validating Input Data
+
+Use `safeParse()` to inspect validation results without throwing errors:
+
+```typescript
 const result = UserSchema.safeParse({
   username: 'john_doe',
   email: '  JOHN@EXAMPLE.COM ',
@@ -81,19 +215,184 @@ const result = UserSchema.safeParse({
 });
 
 if (result.success) {
-  console.log(result.data.email); // "john@example.com"
+  // TypeScript guarantees result.data matches the User type
+  console.log('Sanitized Email:', result.data.email); // "john@example.com"
 } else {
+  // Structured error formatted by field
   console.error(result.error.flatten());
+}
+```
+
+If you prefer exceptions, use `parse()`:
+
+```typescript
+try {
+  const validData = UserSchema.parse(rawInput);
+} catch (error) {
+  console.error('Validation failed:', error.message);
 }
 ```
 
 ---
 
-## Isomorphic MERN Stack Integration Guide
+## Core Features & Problem Solved
 
-### 1. Express / Node.js Backend Middleware
+### Unified Frontend & Backend Validation
 
-Gigli provides request validation middleware that validates `req.body`, `req.query`, and `req.params`, returning HTTP 400 Bad Request if validation fails.
+Sharing schemas between server endpoints and client-side forms guarantees that data definitions remain consistent across application boundaries.
+
+```typescript
+// schemas/auth.ts (Shared schema module)
+import { v } from 'gigli';
+
+export const LoginSchema = v.object({
+  email: v.string().email('Please enter a valid email address'),
+  password: v.string().min(8, 'Password must be at least 8 characters'),
+});
+```
+
+### Built-In Security & Sanitization
+
+Input sanitization is essential when accepting user-generated content or querying databases. Gigli integrates security guards directly into string and object schema pipelines.
+
+#### Anti-XSS Protection
+
+```typescript
+// Reject payloads containing script tags or event handlers
+const StrictInput = v.string().xss();
+
+// Automatically encode HTML characters into safe entities
+const SafeComment = v.string().sanitize();
+```
+
+#### NoSQL Query Injection & Prototype Pollution Defense
+
+NoSQL injection occurs when attackers send nested operator objects (such as `{ "$gt": "" }`) into query parameters. Prototype pollution occurs when attackers supply `__proto__` properties to pollute shared object prototypes.
+
+```typescript
+const UserQuerySchema = v.object({
+  username: v.string(),
+  status: v.string(),
+}).noSqlGuard(); // Strips keys starting with '$' or containing '.' and blocks object prototype pollution
+```
+
+### Automatic Form Data Coercion
+
+HTML form submits return string key-value pairs for all fields. `v.validateForm` parses `FormData` instances and converts fields into typed primitives.
+
+```typescript
+import { v } from 'gigli';
+
+const RegistrationSchema = v.object({
+  username: v.string().min(3),
+  age: v.number().int().min(18),
+  subscribeToNewsletter: v.boolean(),
+});
+
+function handleFormSubmit(formElement: HTMLFormElement) {
+  const formData = new FormData(formElement);
+  const result = v.validateForm(RegistrationSchema, formData);
+
+  if (result.success) {
+    console.log(result.data.age); // Parsed as a primitive number
+  } else {
+    console.log(result.errors.fieldErrors);
+  }
+}
+```
+
+### Declarative String Rules
+
+For runtime schemas defined dynamically or retrieved from databases, Gigli provides a string rule evaluation syntax:
+
+```typescript
+import { v } from 'gigli';
+
+// Dynamic schema parsed from rule strings
+const emailRule = v.from('string|email|min:5');
+
+const isValid = emailRule.safeParse('developer@example.com');
+```
+
+### Class & Decorator Models
+
+Applications using class-oriented domain models can annotate properties with Gigli validation decorators:
+
+```typescript
+import { ValidatedModel, Rule, Refine } from 'gigli';
+
+@ValidatedModel()
+export class ProductModel extends ValidatedModel {
+  @Rule('string|min:2')
+  name!: string;
+
+  @Rule('number|min:0')
+  price!: number;
+
+  @Refine((product: ProductModel) => product.price > 0, {
+    message: 'Price must be greater than zero',
+  })
+  validateProduct() {}
+}
+
+// Instantiation with automatic validation
+const product = ProductModel.from({ name: 'Keyboard', price: 49.99 });
+```
+
+### OpenAPI & JSON Schema Generation
+
+Export standard OpenAPI 3.0 documentation and JSON Schemas directly from runtime definitions without maintaining separate YAML or JSON documents:
+
+```typescript
+import { v, generateOpenApiSchema, generateJsonSchema } from 'gigli';
+
+const AccountSchema = v.object({
+  id: v.string().uuid(),
+  balance: v.number().nonnegative(),
+});
+
+const openApiSpec = generateOpenApiSchema(AccountSchema);
+const jsonSchemaSpec = generateJsonSchema(AccountSchema);
+```
+
+---
+
+## API Reference
+
+### Primitive Validators
+
+| Validator | Chainable Methods | Description |
+| :--- | :--- | :--- |
+| `v.string()` | `.min(len)`, `.max(len)`, `.length(len)`, `.email()`, `.url()`, `.uuid()`, `.objectId()`, `.alphanumeric()`, `.regex(pattern)`, `.xss()`, `.sanitize()`, `.trim()`, `.toLowerCase()`, `.toUpperCase()` | String schema validation and transformation. |
+| `v.number()` | `.min(val)`, `.max(val)`, `.int()`, `.positive()`, `.negative()`, `.nonnegative()`, `.multipleOf(val)`, `.finite()` | Number validation and range constraints. |
+| `v.boolean()` | — | Boolean primitive validation. |
+| `v.date()` | — | Date instance or ISO date string validation. |
+| `v.bigint()` | — | BigInt primitive validation. |
+| `v.literal(val)` | — | Exact literal value match. |
+| `v.enum(values)` | — | Array tuple string enum validator. |
+| `v.nativeEnum(e)` | — | TypeScript `enum` object validator. |
+| `v.any()` / `v.unknown()` | — | Pass-through validation schemas. |
+
+### Complex & Structural Validators
+
+- `v.object(shape)`: Object schema composition. Supports `.strict()`, `.passthrough()`, `.strip()`, `.extend()`, `.merge()`, `.pick()`, `.omit()`, `.partial()`, `.noSqlGuard()`.
+- `v.array(elementSchema)`: Array validation with `.min()`, `.max()`, `.length()`, `.nonempty()`, `.unique()`.
+- `v.tuple([schemaA, schemaB])`: Fixed-length multi-type array validation.
+- `v.record(keySchema, valueSchema)`: Key-value map validation.
+- `v.union([schemaA, schemaB])`: Multi-schema union validation.
+- `v.discriminatedUnion(key, schemas)`: Optimized tagged union parsing.
+- `v.intersection(schemaA, schemaB)`: Combined intersection schema validation.
+- `v.lazy(() => schema)`: Recursive schema definitions.
+
+### Security Methods
+
+- `schema.xss(customMessage?)`: Rejects inputs containing malicious HTML script fragments.
+- `schema.sanitize()`: Encodes HTML entities in string inputs.
+- `schema.noSqlGuard()`: Blocks object keys containing MongoDB operators (`$`) or path selectors (`.`) and strips dangerous prototype keys.
+
+### Express Integration
+
+Validate incoming requests in Express routing layers:
 
 ```typescript
 import express from 'express';
@@ -102,166 +401,69 @@ import { v } from 'gigli';
 const app = express();
 app.use(express.json());
 
-const CreateUserSchema = v.object({
-  username: v.string().min(3),
-  email: v.string().email(),
-  password: v.string().min(8),
+const CreatePostSchema = v.object({
+  title: v.string().min(5),
+  content: v.string().min(10),
 });
 
-app.post('/api/users', v.middleware({ body: CreateUserSchema }), (req, res) => {
-  // req.body is fully validated and typed
-  res.status(201).json({ message: 'User created successfully', user: req.body });
+app.post('/posts', v.middleware({ body: CreatePostSchema }), (req, res) => {
+  res.status(201).json({ success: true, post: req.body });
 });
 ```
 
-### 2. React / Frontend Form Validation
+### Form Validation
 
-Use `v.validateForm` to validate HTML forms or React state payloads, automatically coercing string inputs to typed numbers, booleans, and dates.
-
-```typescript
-import React, { useState } from 'react';
-import { v } from 'gigli';
-
-const SignupSchema = v.object({
-  username: v.string().min(3, 'Username must be at least 3 characters'),
-  email: v.string().email('Invalid email address'),
-  age: v.number().min(18, 'Must be at least 18 years old'),
-});
-
-export function SignupForm() {
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-
-    const result = v.validateForm(SignupSchema, formData);
-
-    if (!result.success) {
-      setErrors(result.errors.fieldErrors);
-    } else {
-      setErrors({});
-      console.log('Submitted Payload:', result.data);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input name="username" placeholder="Username" />
-      {errors.username && <p>{errors.username.join(', ')}</p>}
-
-      <input name="email" placeholder="Email" />
-      {errors.email && <p>{errors.email.join(', ')}</p>}
-
-      <input name="age" type="number" placeholder="Age" />
-      {errors.age && <p>{errors.age.join(', ')}</p>}
-
-      <button type="submit">Register</button>
-    </form>
-  );
-}
-```
-
----
-
-## Security Features
-
-### Anti-XSS Sanitization
-
-```typescript
-// Reject strings containing XSS script vectors
-const CommentSchema = v.string().xss('Potential script injection detected');
-
-// Or automatically sanitize HTML tags into safe entities
-const SafeBodySchema = v.string().sanitize();
-```
-
-### Prototype Pollution & NoSQL Defense
-
-```typescript
-// Automatically strips __proto__, constructor, and prototype injections
-const PayloadSchema = v.object({
-  title: v.string(),
-}).noSqlGuard(); // Blocks MongoDB operator objects (e.g. { $gt: "" })
-```
-
----
-
-## Declarative String Rule Engine
-
-For dynamic or database-driven rules, Gigli supports string rule syntax:
+Parse raw `FormData` in web applications:
 
 ```typescript
 import { v } from 'gigli';
 
-const emailRule = v.from('string|email|min:5');
-const validated = emailRule.parse('user@domain.com');
+const result = v.validateForm(schema, formData);
+// Returns { success: true, data: T } or { success: false, errors: { fieldErrors: Record<string, string[]> } }
+```
+
+### CLI Tooling
+
+Gigli provides an optional command-line interface for analyzing schema integrity and generating OpenAPI / JSON Schema files.
+
+```bash
+# Analyze a schema file for potential issues
+npx gigli analyze --schema ./src/schemas/user.ts
+
+# Export OpenAPI 3.0 specification JSON
+npx gigli codegen --schema ./src/schemas/user.ts --target openapi
+
+# Export JSON Schema specification JSON
+npx gigli codegen --schema ./src/schemas/user.ts --target jsonschema
 ```
 
 ---
 
-## Class Decorators
+## Testing & Quality Assurance
 
-```typescript
-import { ValidatedModel, Rule, Refine } from 'gigli';
+Gigli Validator is thoroughly tested using modern testing framework tools:
 
-@ValidatedModel()
-export class UserModel {
-  @Rule('string|min:3')
-  username!: string;
+- **Unit Testing**: [Vitest](https://vitest.dev/)
+- **Backend API Integration**: Vitest + [Supertest](https://github.com/ladjs/supertest)
+- **Frontend React Integration**: Vitest + [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
+- **End-to-End Browser Testing**: [Playwright](https://playwright.dev/)
 
-  @Rule('string|email')
-  email!: string;
+```bash
+# Run Unit & Integration test suites
+npm test
 
-  @Refine((user: UserModel) => !user.username.includes('admin'), 'Admin username reserved')
-  validateCustom() {}
-}
+# Run Vitest in watch mode
+npm run test:watch
+
+# Generate test coverage report
+npm run test:coverage
+
+# Run Playwright E2E browser test
+npm run test:e2e
 ```
-
----
-
-## OpenAPI & JSON Schema Generation
-
-```typescript
-import { v, generateJsonSchema, generateOpenApiSchema } from 'gigli';
-
-const ProductSchema = v.object({
-  id: v.string().uuid(),
-  name: v.string(),
-  price: v.number().positive(),
-});
-
-const jsonSchema = generateJsonSchema(ProductSchema);
-const openApiSchema = generateOpenApiSchema(ProductSchema);
-```
-
----
-
-## API Reference
-
-### Primitives
-- `v.string()`: String schema with `.min()`, `.max()`, `.length()`, `.email()`, `.url()`, `.uuid()`, `.objectId()`, `.alphanumeric()`, `.regex()`, `.xss()`, `.sanitize()`, `.trim()`, `.toLowerCase()`, `.toUpperCase()`.
-- `v.number()`: Number schema with `.min()`, `.max()`, `.int()`, `.positive()`, `.negative()`, `.nonnegative()`, `.multipleOf()`, `.finite()`.
-- `v.boolean()`: Boolean schema.
-- `v.date()`: Date schema supporting Date instances or ISO strings.
-- `v.bigint()`: BigInt schema.
-- `v.literal(value)`: Exact literal value schema.
-- `v.enum(values)`: Tuple of string enum values.
-- `v.nativeEnum(enumObj)`: TypeScript enum schema.
-- `v.objectId()`: MongoDB ObjectId validator.
-
-### Data Structures & Combinators
-- `v.object(shape)`: Object schema with `.strict()`, `.strip()`, `.passthrough()`, `.extend()`, `.merge()`, `.pick()`, `.omit()`, `.partial()`, `.noSqlGuard()`.
-- `v.array(elementSchema)`: Array schema with `.min()`, `.max()`, `.length()`, `.nonempty()`, `.unique()`.
-- `v.tuple(schemas)`: Fixed-length tuple schema.
-- `v.record(keySchema, valueSchema)`: Record map schema.
-- `v.union(schemas)`: Union schema.
-- `v.discriminatedUnion(discriminator, options)`: Discriminated union schema.
-- `v.intersection(schemaA, schemaB)`: Intersection schema.
-- `v.lazy(getter)`: Lazy recursive schema.
 
 ---
 
 ## License
 
-MIT License. Copyright (c) Junaid Ali Shah Gigli.
+Distributed under the [MIT License](LICENSE). Copyright (c) 2024-2026 Junaid Ali Shah Gigli.

@@ -3,7 +3,7 @@ import { parseArgs, printHelp } from "./helpers";
 export async function runAnalyze(args: string[]) {
   const opts = parseArgs(args);
   if (!opts["schema"]) {
-    console.error("[gigli.js] --schema is required for analyze.");
+    console.error("[gigli] --schema is required for analyze.");
     printHelp();
     process.exit(1);
   }
@@ -19,7 +19,7 @@ export async function runAnalyze(args: string[]) {
     const schema =
       schemaModule.default || schemaModule.schema || schemaModule.UserSchema;
     if (!schema) {
-      console.error("[gigli.js] Could not find a schema export in the file.");
+      console.error("[gigli] Could not find a schema export in the file.");
       process.exit(1);
     }
     const { analyzeSchema } = await import("../core/analyze/analyzeSchema");
@@ -34,7 +34,7 @@ export async function runAnalyze(args: string[]) {
       }
     }
   } catch (e) {
-    console.error("[gigli.js] Failed to load schema:", e);
+    console.error("[gigli] Failed to load schema:", e);
     process.exit(1);
   }
 }

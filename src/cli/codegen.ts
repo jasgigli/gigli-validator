@@ -3,7 +3,7 @@ import { parseArgs, printHelp } from "./helpers";
 export async function runCodegen(args: string[]) {
   const opts = parseArgs(args);
   if (!opts["schema"] || !opts["target"]) {
-    console.error("[gigli.js] --schema and --target are required for codegen.");
+    console.error("[gigli] --schema and --target are required for codegen.");
     printHelp();
     process.exit(1);
   }
@@ -18,7 +18,7 @@ export async function runCodegen(args: string[]) {
     const schema =
       schemaModule.default || schemaModule.schema || schemaModule.UserSchema;
     if (!schema) {
-      console.error("[gigli.js] Could not find a schema export in the file.");
+      console.error("[gigli] Could not find a schema export in the file.");
       process.exit(1);
     }
     const { generateJsonSchema } = await import("../core/codegen/jsonSchema");
@@ -31,11 +31,11 @@ export async function runCodegen(args: string[]) {
       const jsonschema = generateJsonSchema(ast);
       console.log(JSON.stringify(jsonschema, null, 2));
     } else {
-      console.error("[gigli.js] Unknown target:", target);
+      console.error("[gigli] Unknown target:", target);
       process.exit(1);
     }
   } catch (e) {
-    console.error("[gigli.js] Failed to load schema:", e);
+    console.error("[gigli] Failed to load schema:", e);
     process.exit(1);
   }
 }

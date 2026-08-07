@@ -1,4 +1,4 @@
-// AST type aliases and interfaces for gigli.js V4 Unified Runtime
+// AST type aliases and interfaces for Gigli Unified Runtime
 
 export type PrimitiveType =
   | "string"

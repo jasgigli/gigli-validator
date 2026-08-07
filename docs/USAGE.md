@@ -1,76 +1,62 @@
-# gigli.js Usage Guide (v1.0.0)
+# Gigli Usage Guide
 
 ## CLI Usage
 
-You can use the CLI directly with npx (no install required):
+Run the CLI using `npx`:
 
-```sh
+```bash
 npx gigli codegen --schema ./path/to/schema.ts --target openapi
 npx gigli codegen --schema ./path/to/schema.ts --target jsonschema
 npx gigli analyze --schema ./path/to/schema.ts
 ```
 
-For help:
+Help flag:
 
-```sh
+```bash
 npx gigli --help
 ```
 
 ## Basic Library Usage
 
-Here is a modern example using the builder API:
+Import standard validator primitives:
 
 ```typescript
-import { validate, object, string } from 'gigli.js';
+import { v, Infer } from 'gigli';
 
-const userSchema = object({
-  name: string().min(2),
-  email: string().email(),
+const UserSchema = v.object({
+  name: v.string().min(2),
+  email: v.string().email(),
 });
 
-const result = validate(userSchema, { name: 'Alice', email: 'alice@example.com' });
-console.log(result);
-```
+type User = Infer<typeof UserSchema>;
 
-### Nested Validation
-You can validate nested objects by validating each level separately:
-```typescript
-import { validate } from 'gigli.js';
-
-const userSchema = {
-  name: 'string:min=2',
-  profile: 'object',
-};
-
-const profileSchema = {
-  age: 'number:min=18',
-  bio: 'string:max=160',
-};
-
-const user = {
-  name: 'Alice',
-  profile: {
-    age: 22,
-    bio: 'Hello!'
-  }
-};
-
-const userResult = await validate(user, userSchema);
-if (userResult.isValid) {
-  const profileResult = await validate(user.profile, profileSchema);
-  // ...
+const result = UserSchema.safeParse({ name: 'Alice', email: 'alice@example.com' });
+if (result.success) {
+  console.log(result.data);
+} else {
+  console.error(result.error.flatten());
 }
 ```
 
-### Custom Rules
-You can extend gigli.js by adding your own rules using the registry API (see README for details).
+### Declarative String Rule Validation
 
-### Error Handling
-The `errors` object returned by `validate` maps field names to error messages. You can display these in your UI or logs.
+Define schemas dynamically from string rules:
 
-## Tips
-- Always keep your schemas in sync between frontend and backend.
-- Use enums for fields with limited values.
-- Use regex for advanced string validation.
+```typescript
+import { v } from 'gigli';
 
-For more, see the API reference in the README.
+const emailRule = v.from('string|email|min:5');
+const validated = emailRule.parse('user@domain.com');
+```
+
+### Custom Rule Registration
+
+Extend validation rules globally using the definition registry:
+
+```typescript
+import { define, v } from 'gigli';
+
+define('strongPassword', 'string|min:8|regex:[A-Z]|regex:[0-9]');
+```
+
+For comprehensive details, see [README.md](../README.md).

@@ -47,7 +47,7 @@ const [, , command, ...args] = process.argv;
     await runAnalyze(args);
     return;
   }
-  console.error(`[gigli.js] Unknown command: ${command}`);
+  console.error(`[gigli] Unknown command: ${command}`);
   printHelp();
   process.exit(1);
 })();
