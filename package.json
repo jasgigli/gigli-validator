@@ -1,5 +1,5 @@
 {
-  "name": "gigli",
+  "name": "gigli.js",
   "version": "3.0.0",
   "description": "Gigli: High-performance, type-safe isomorphic JavaScript and TypeScript validation engine for MERN stack, Node.js, and web browsers with built-in security, schema inference, decorator models, string rules, and OpenAPI/JSON Schema generation.",
   "author": "Junaid Ali Shah Gigli",
@@ -45,7 +45,8 @@
     "require": "./dist/index.cjs"
   },
   "bin": {
-    "gigli": "./dist/cli/index.js"
+    "gigli": "./dist/cli/index.js",
+    "gigli.js": "./dist/cli/index.js"
   },
   "files": [
     "dist"
